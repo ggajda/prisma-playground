@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { Customer } from "./types";
+import { Address, Customer } from "./types";
 import * as dotenv from "dotenv";
 dotenv.config(); // Load the environment variables
 console.log(`The connection URL is ${process.env.DATABASE_URL}`);
@@ -8,7 +8,9 @@ const prisma = new PrismaClient();
 
 async function main(fn: Function) {
   fn()
-    .then(async () => {
+    .then(async (m: {}) => {
+      console.log(m);
+
       await prisma.$disconnect();
     })
     .catch(async (e: any) => {
@@ -25,18 +27,35 @@ async function prismaCustomer(data: Customer) {
     },
     create: {
       name: data.name,
+      address: { create: data.address },
     },
-    update: { name: data.name },
+    update: {
+      name: data.name,
+      address: {
+        update: {
+          where: {
+            id: data.address?.id,
+          },
+          data: data.address || {},
+        },
+      },
+    },
   });
 
   return customer;
 }
 
-export default async function save() {
+export default async function save(): Promise<void> {
   const data: Customer = {
-    name: "Topcon Polska",
+    id: "3b53e8c8-f378-4249-89d0-3537a472ed2e",
+    name: "Topcon Polska sp. z o.o.",
+    address: {
+      id: "7ab360da-9e9c-4930-ad4e-4bbe68d9f87d",
+      street: "Warszawska 222",
+      zip: "24-470",
+      city: "Siewierz",
+    },
   };
 
-  const save = await main(() => prismaCustomer(data));
-  return save;
+  await main(() => prismaCustomer(data));
 }
